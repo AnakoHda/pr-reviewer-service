@@ -1,0 +1,51 @@
+
+services:
+  pr:
+    build: .
+    container_name: pearReview-service
+    ports:
+      - "8080:${SERVICE_PORT:-8080}"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SERVICE_PORT: ${SERVICE_PORT:-8080}
+      POSTGRES_USER: ${POSTGRES_USER:-authuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-authpass}
+      POSTGRES_DB: ${POSTGRES_DB:-authdb}
+      POSTGRES_HOST: ${POSTGRES_HOST:-localhost}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_URL: ${POSTGRES_URL:-postgres://authuser:authpass@postgres:5432/authdb?sslmode=disable}
+
+  migrator:
+    build: ./tools
+    container_name: goose
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      POSTGRES_URL: ${POSTGRES_URL:-postgres://authuser:authpass@postgres:5432/authdb?sslmode=disable}
+    volumes:
+      - ./migrations:/migrations
+    entrypoint: [ "/goose/entrypoint.sh" ]
+
+  db:
+    image: postgres:16
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-authuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-authpass}
+      POSTGRES_DB: ${POSTGRES_DB:-authdb}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-authuser} -d ${POSTGRES_DB:-authdb}" ]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 30s
+volumes:
+  pgdata:

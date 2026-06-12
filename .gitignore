@@ -1,0 +1,22 @@
+# Бинарники
+*.exe
+*.out
+*.o
+*.a
+*.so
+*.test
+
+# Go
+/vendor/
+/bin/
+/coverage.out
+
+# Docker volumes
+pgdata/
+
+# IDE
+.idea/
+.vscode/
+
+# Env
+.env
